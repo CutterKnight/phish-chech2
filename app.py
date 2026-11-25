@@ -1,7 +1,11 @@
-"""Week 3: look at the features of one address, and at the prepared data."""
+"""Week 5: feature table, prepared data, and the model comparison page."""
+import json
+from pathlib import Path
+
 import pandas as pd
 from flask import Flask, render_template, request
 
+from settings import DEPLOYED_SET
 from urlfeatures import check_url, extract
 
 app = Flask(__name__)
@@ -25,6 +29,13 @@ def data_page():
     samples = {"phishing": data[data["is_phishing"] == 1]["url"].head(10).tolist(),
                "legitimate": data[data["is_phishing"] == 0]["url"].head(10).tolist()}
     return render_template("data.html", n=len(data), counts=counts, hosts=data["host"].nunique(), samples=samples)
+
+
+@app.route("/model")
+def model_page():
+    path = Path("models/metrics.json")
+    info = json.loads(path.read_text()) if path.exists() else None
+    return render_template("model.html", info=info, deployed=DEPLOYED_SET)
 
 
 if __name__ == "__main__":

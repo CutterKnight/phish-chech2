@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Models{% endblock %}
+{% block content %}
+<h1 class="h4">Model comparison</h1>
+{% if not info %}
+<div class="alert alert-warning">No results yet. In the Command Prompt run: <code>python train.py</code> then refresh this page.</div>
+{% else %}
+<p class="text-muted">Trained {{ info.trained_at }} on {{ info.n_urls }} addresses from {{ info.n_hosts }} hosts.
+  Phishing is the positive class: <b>recall</b> = how many phishing addresses were caught,
+  <b>precision</b> = how many of the alarms were real.</p>
+{% for kind, title, note in [
+  ("random", "Random split", "Any address can be in the training or the test part, so the same host may appear in both."),
+  ("by_host", "Split by host", "All addresses of a host stay in the same part, so the test part has hosts the model never saw. This is the harder, more realistic test.")] %}
+<h2 class="h6 mt-4">{{ title }}</h2>
+<p class="small text-muted">{{ note }}</p>
+<div class="table-responsive">
+<table class="table table-sm table-striped bg-white">
+  <thead><tr><th>Feature set</th><th>Algorithm</th><th>Accuracy</th><th>Recall</th><th>Precision</th><th>F1</th>
+    <th title="legitimate passed">TN</th><th title="false alarms">FP</th><th title="missed phishing">FN</th><th title="phishing caught">TP</th></tr></thead>
+  <tbody>
+  {% for r in info.results if r.split == kind %}
+  <tr {% if kind == "by_host" and r.set == deployed and r.algorithm == "Logistic Regression" %}class="table-primary"{% endif %}>
+    <td>{{ r.set }}</td><td>{{ r.algorithm }}</td>
+    <td>{{ "%.3f"|format(r.accuracy) }}</td><td>{{ "%.3f"|format(r.recall) }}</td>
+    <td>{{ "%.3f"|format(r.precision) }}</td><td>{{ "%.3f"|format(r.f1) }}</td>
+    <td>{{ r.tn }}</td><td>{{ r.fp }}</td><td>{{ r.fn }}</td><td>{{ r.tp }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endfor %}
+<p class="small">The blue row is the model used by the website ({{ deployed }}, Logistic Regression, split by host).</p>
+<h2 class="h6 mt-4">Feature sets</h2>
+<ul class="small">{% for name, cols in info.sets.items() %}<li><b>{{ name }}</b> ({{ cols|length }}): {{ cols|join(", ") }}</li>{% endfor %}</ul>
+{% endif %}
+{% endblock %}
